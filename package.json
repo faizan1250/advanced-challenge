@@ -1,0 +1,48 @@
+{
+  "name": "advanced-challenge",
+  "version": "1.0.0",
+  "main": "server.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "jest",
+    "start": "node server.js"
+  },
+  "jest": {
+  "setupFiles": ["<rootDir>/jest.setup.js"]
+},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/faizan1250/advanced-challenge.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/faizan1250/advanced-challenge/issues"
+  },
+  "homepage": "https://github.com/faizan1250/advanced-challenge#readme",
+  "description": "",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "bullmq": "^5.56.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.0.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^7.5.1",
+    "express-validator": "^7.2.1",
+    "firebase-admin": "^13.4.0",
+    "ioredis": "^5.6.1",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.16.1",
+    "multer": "^2.0.1"
+  },
+  "devDependencies": {
+    "eslint": "^9.30.0",
+    "jest": "^30.0.3",
+    "mongodb-memory-server": "^10.1.4",
+    "prettier": "^3.6.2",
+    "supertest": "^7.1.1"
+  }
+}
