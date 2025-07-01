@@ -1,3 +1,4 @@
+
 const Redis = require('ioredis');
 
 const redis = new Redis(process.env.REDIS_URL, {
@@ -22,13 +23,16 @@ redis.on('reconnecting', (ms) => console.log(`🔁 Redis reconnecting in ${ms}ms
 redis.on('end', () => console.log('🔌 Redis connection closed'));
 
 // Proactive Health Monitoring
-setInterval(async () => {
-  try {
-    await redis.ping();
-    console.log('🏓 Redis ping successful');
-  } catch (err) {
-    console.error('⛔ Redis ping failed:', err.message);
-  }
-}, 60000); // Every 60 seconds
+
+  setInterval(async () => {
+    try {
+      await redis.ping();
+      console.log('🏓 Redis ping successful');
+    } catch (err) {
+      console.warn('Redis ping failed:', err.message);
+    }
+  }, 60000);
+
+
 
 module.exports = redis;

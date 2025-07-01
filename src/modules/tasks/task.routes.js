@@ -19,6 +19,6 @@ router.patch('/:id', updateTask);
 router.delete('/:id', deleteTask);
 router.patch('/:id/starred', toggleStarred);
 router.post('/:id/attachments', upload.single('file'), uploadAttachment);
-router.post('/tasks/:id/complete', isParticipant, completeSharedTask);
+router.post('/:id/complete', isParticipant, completeSharedTask);
 
 module.exports = router;

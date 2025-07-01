@@ -6,7 +6,10 @@ const categoryRoutes = require('./modules/tasks/category.routes');
 const attachmentRoutes = require('./modules/tasks/attachment.routes');
 const systemRoutes = require('./modules/system/system.routes');
 const cronRoutes = require('./modules/system/cron.routes');
+const focusRoutes = require('./modules/focus/focus.routes');
 const rateLimit = require('express-rate-limit');
+const leaderboardRoutes = require('./modules/leaderboard/leaderboard.route');
+const challengeRoutes = require('./modules/challenges/challenge.routes');
 const app = express();
 
 const limiter = rateLimit({
@@ -25,5 +28,7 @@ app.use('/api/cron', cronRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/attachments', attachmentRoutes);
-
+app.use('/api/focus', focusRoutes);
+app.use('/api/leaderboard', leaderboardRoutes);
+app.use('/api/challenges', challengeRoutes);
 module.exports = app;

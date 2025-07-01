@@ -8,10 +8,21 @@ const userSchema = new mongoose.Schema({
   refreshToken: { type: String },
   gamifiedStats: {
   xp: { type: Number, default: 0 },
+  totalPoints: { type: Number, default: 0 },
   streak: { type: Number, default: 0 },
-  totalFocusTime: { type: Number, default: 0 }, // ms
-  lastCompletedDate: Date,
+  lastCompletedDate: Date
 },
+challengeProgress: [
+  {
+    challengeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Challenge' },
+    totalMinutes: { type: Number, default: 0 },
+    totalXP: { type: Number, default: 0 },
+  }
+],
+friends: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+monthlyWins: { type: Number, default: 0 },
+
+
 
 }, { timestamps: true });
 

@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const authMiddleware = require('../../middleware/authMiddleware');
+const auth = require('../../middleware/authMiddleware');
 const focusController = require('./focus.controller');
 
-router.post('/focus/start', authMiddleware, focusController.startFocus);
-router.post('/focus/stop', authMiddleware, focusController.stopFocus);
+router.post('/start', auth, focusController.startFocusSession);
+router.post('/end', auth, focusController.endFocusSession);
 
 module.exports = router;

@@ -34,10 +34,12 @@ exports.createTask = async (req, res) => {
       }
     }
 
-    res.status(201).json({
-      ...task.toObject(),
-      hasReminder: !!req.body.reminderTime
-    });
+   res.status(201).json({
+  task: {
+    ...task.toObject(),
+    hasReminder: !!req.body.reminderTime
+  }
+});
   } catch (err) {
     console.error('Error creating task:', err);
     res.status(500).json({ 
@@ -162,6 +164,14 @@ exports.uploadAttachment = async (req, res) => {
 };
 
 // task.controller.js
+const { awardXP } = require('../leaderboard/xp.service');
+const { emitToUser } = require('../../sockets/pub');
+const { TASK_UPDATED } = require('../../sockets/events');
+const User = require('../auth/auth.model');
+
+const {  TASK_COMPLETED_BY_PARTICIPANT } = require('../../sockets/events');
+
+
 exports.completeSharedTask = async (req, res) => {
   const { task } = req; // from middleware
   const userId = req.user.id;
@@ -172,22 +182,55 @@ exports.completeSharedTask = async (req, res) => {
     return res.status(400).json({ error: 'Already completed by this user' });
   }
 
-  const earnedXP = 10; // later calculate based on difficulty/time/etc
+  const earnedXP = 10; // TODO: Make dynamic later
 
-  task.completions.push({ userId, earnedXP });
+  task.completions.push({
+    userId,
+    earnedXP,
+    completedAt: new Date()
+  });
   await task.save();
 
-  // Update user XP
-  await User.findByIdAndUpdate(userId, {
-    $inc: { 'gamifiedStats.xp': earnedXP },
-    $set: { 'gamifiedStats.lastCompletedDate': new Date() },
-  });
+  const leaderboard = task.completions
+  .map(c => ({
+    userId: c.userId,
+    earnedXP: c.earnedXP,
+    completedAt: c.completedAt
+  }))
+  .sort((a, b) => b.earnedXP - a.earnedXP || new Date(a.completedAt) - new Date(b.completedAt));
 
-  // Emit WebSocket event
-  req.io?.to(userId).emit('TASK_UPDATED', {
+// Emit leaderboard to all participants
+task.participants.forEach(participantId => {
+  emitToUser(participantId, 'TASK_LEADERBOARD_UPDATED', {
+    taskId: task._id,
+    leaderboard
+  });
+});
+
+
+  // Award XP and track streak
+  await awardXP(userId, earnedXP);
+
+  // Notify the completing user
+  emitToUser(userId, TASK_UPDATED, {
     taskId: task._id,
     type: 'completed',
     userId,
+    earnedXP
+  });
+
+  // Notify other participants
+  const otherParticipantIds = task.participants.filter(
+    id => id.toString() !== userId
+  );
+
+  otherParticipantIds.forEach(participantId => {
+    emitToUser(participantId, TASK_COMPLETED_BY_PARTICIPANT, {
+      taskId: task._id,
+      completedBy: userId,
+      completedAt: new Date(),
+      earnedXP
+    });
   });
 
   res.status(200).json({ message: 'Task completed', earnedXP });

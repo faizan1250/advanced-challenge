@@ -1,48 +1,47 @@
-exports.startFocus = async (req, res) => {
+const FocusSession = require('./focus.model');
+const { emitToUser } = require('../../sockets/pub');
+const { awardXP } = require('../leaderboard/xp.service');
+
+exports.startFocusSession = async (req, res) => {
   const { taskId } = req.body;
   const userId = req.user.id;
 
-  const existing = await FocusSession.findOne({ userId, endedAt: null });
-  if (existing) {
-    return res.status(400).json({ error: 'Focus session already running' });
-  }
+  const session = await FocusSession.create({ userId, taskId });
 
-  const session = await FocusSession.create({
-    userId,
+  emitToUser(userId, 'FOCUS_STARTED', {
+    sessionId: session._id,
     taskId,
-    startedAt: new Date(),
+    startedAt: session.startedAt
   });
 
-  req.io?.to(userId).emit('FOCUS_STARTED', { sessionId: session._id });
-
-  res.status(201).json({ sessionId: session._id });
+  res.status(201).json({ message: 'Focus session started', session });
 };
 
-exports.stopFocus = async (req, res) => {
+exports.endFocusSession = async (req, res) => {
+  const { sessionId } = req.body;
   const userId = req.user.id;
 
-  const session = await FocusSession.findOne({ userId, endedAt: null });
-  if (!session) {
-    return res.status(404).json({ error: 'No active focus session' });
+  const session = await FocusSession.findOne({ _id: sessionId, userId });
+  if (!session || session.endedAt) {
+    return res.status(400).json({ error: 'Session not found or already ended' });
   }
 
   session.endedAt = new Date();
-  session.duration = session.endedAt - session.startedAt;
+  session.durationMinutes = Math.round((session.endedAt - session.startedAt) / 60000);
+
+  // Award XP: 1 XP per 5 mins (customize as needed)
+  const earnedXP = Math.floor(session.durationMinutes / 5);
+  session.pointsEarned = earnedXP;
+
   await session.save();
 
-  const earnedXP = Math.floor(session.duration / (25 * 60 * 1000)) * 5; // 5 XP per 25 mins
+  if (earnedXP > 0) await awardXP(userId, earnedXP);
 
-  await User.findByIdAndUpdate(userId, {
-    $inc: {
-      'gamifiedStats.xp': earnedXP,
-      'gamifiedStats.totalFocusTime': session.duration,
-    },
-  });
-
-  req.io?.to(userId).emit('FOCUS_ENDED', {
+  emitToUser(userId, 'FOCUS_ENDED', {
     sessionId: session._id,
-    earnedXP,
+    durationMinutes: session.durationMinutes,
+    earnedXP
   });
 
-  res.status(200).json({ message: 'Focus ended', duration: session.duration, earnedXP });
+  res.status(200).json({ message: 'Focus session ended', session });
 };
